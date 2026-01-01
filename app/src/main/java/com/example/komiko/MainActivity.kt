@@ -1,8 +1,10 @@
+// MainActivity.kt
 package com.example.komiko
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -18,7 +20,7 @@ import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.WifiOff
 import androidx.compose.material3.*
-import androidx.compose.runtime.* // Import needed for var, by, remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,10 +31,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.BorderStroke
 import com.example.komiko.ui.theme.KomikOTheme
 
-// Color Definitions
+// 1. Define the Data Model
+data class Manga(
+    val title: String,
+    val author: String,
+    val status: String,
+    val chaptersRead: String,
+    val totalChapters: String,
+    val rating: Int
+)
+
+// Global Colors
 val KomikoOrange = Color(0xFFF0A500)
 val KomikoLightOrange = Color(0xFFFFF4E0)
 val TextDark = Color(0xFF1A1A1A)
@@ -43,22 +54,63 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             KomikOTheme {
-                // This variable decides which screen to show
+                val mangaList = remember { mutableStateListOf<Manga>() }
                 var currentScreen by remember { mutableStateOf("dashboard") }
 
-                if (currentScreen == "dashboard") {
-                    // Pass a function to change the screen when button is clicked
-                    KomikoHomeScreen(onStartTracking = { currentScreen = "library" })
-                } else {
-                    // Show the Empty Library screen (from HomeScreen.kt)
-                    EmptyLibraryScreen()
+                // New state to hold the manga currently being viewed/edited
+                var selectedManga by remember { mutableStateOf<Manga?>(null) }
+
+                when (currentScreen) {
+                    "dashboard" -> {
+                        KomikoHomeScreen(onStartTracking = { currentScreen = "library" })
+                    }
+                    "library" -> {
+                        LibraryScreen(
+                            mangaList = mangaList,
+                            onAddMangaClick = { currentScreen = "add_manga" },
+                            onMangaClick = { manga ->
+                                // Set the selected manga and navigate to details
+                                selectedManga = manga
+                                currentScreen = "details"
+                            }
+                        )
+                    }
+                    "add_manga" -> {
+                        AddMangaManualScreen(
+                            onBack = { currentScreen = "library" },
+                            onSave = { newManga ->
+                                mangaList.add(newManga)
+                                currentScreen = "library"
+                            }
+                        )
+                    }
+                    "details" -> {
+                        if (selectedManga != null) {
+                            MangaDetailsScreen(
+                                manga = selectedManga!!,
+                                onBackClick = { currentScreen = "library" },
+                                onSaveClick = { updatedManga ->
+                                    // Update the list with the new details
+                                    val index = mangaList.indexOf(selectedManga)
+                                    if (index != -1) {
+                                        mangaList[index] = updatedManga
+                                    }
+                                    currentScreen = "library"
+                                }
+                            )
+                        } else {
+                            // Fallback if something goes wrong
+                            currentScreen = "library"
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-// 1. Update KomikoHomeScreen to accept the click action
+// ... Rest of the MainActivity.kt (KomikoHomeScreen, HeaderSection, etc.) remains the same ...
+// You can keep the existing @Composable functions below this line as they were in your original file.
 @Composable
 fun KomikoHomeScreen(onStartTracking: () -> Unit) {
     Column(
@@ -73,7 +125,6 @@ fun KomikoHomeScreen(onStartTracking: () -> Unit) {
         Spacer(modifier = Modifier.height(32.dp))
         FeaturesSection()
         Spacer(modifier = Modifier.height(48.dp))
-        // Pass the action down to ActionSection
         ActionSection(onStartClick = onStartTracking)
         Spacer(modifier = Modifier.height(24.dp))
     }
@@ -94,42 +145,18 @@ fun HeaderSection() {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = "Kom!kO",
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Text(
-                text = "Track. Read. Enjoy.",
-                fontSize = 16.sp,
-                color = Color.White.copy(alpha = 0.8f)
-            )
+            Text("Kom!kO", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Track. Read. Enjoy.", fontSize = 16.sp, color = Color.White.copy(alpha = 0.8f))
         }
     }
 }
 
 @Composable
 fun TextSection() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(horizontal = 24.dp)
-    ) {
-        Text(
-            text = "Your Manga,\nAnywhere.",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = TextDark,
-            textAlign = TextAlign.Center,
-            lineHeight = 36.sp
-        )
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 24.dp)) {
+        Text("Your Manga,\nAnywhere.", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = TextDark, textAlign = TextAlign.Center, lineHeight = 36.sp)
         Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Keep track of your chapters without an internet connection. The ultimate companion for the on-the-go otaku.",
-            fontSize = 16.sp,
-            color = TextGray,
-            textAlign = TextAlign.Center
-        )
+        Text("Keep track of your chapters without an internet connection. The ultimate companion for the on-the-go otaku.", fontSize = 16.sp, color = TextGray, textAlign = TextAlign.Center)
     }
 }
 
@@ -140,13 +167,8 @@ fun FeaturesSection() {
         FeatureData("Smart Sync", "Update later", Icons.Rounded.Sync),
         FeatureData("Ad-Free", "Pure reading", Icons.Rounded.Block),
     )
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(features) { feature ->
-            FeatureCard(feature)
-        }
+    LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        items(features) { feature -> FeatureCard(feature) }
     }
 }
 
@@ -164,10 +186,7 @@ fun FeatureCard(feature: FeatureData) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.Start
         ) {
-            Box(
-                modifier = Modifier.size(40.dp).background(KomikoLightOrange, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.size(40.dp).background(KomikoLightOrange, CircleShape), contentAlignment = Alignment.Center) {
                 Icon(feature.icon, contentDescription = null, tint = KomikoOrange)
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -177,15 +196,10 @@ fun FeatureCard(feature: FeatureData) {
     }
 }
 
-// 2. Update ActionSection to receive the click event
 @Composable
 fun ActionSection(onStartClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(horizontal = 24.dp)
-    ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 24.dp)) {
         Button(
-            // 3. Trigger the navigation here
             onClick = onStartClick,
             colors = ButtonDefaults.buttonColors(containerColor = KomikoOrange),
             shape = RoundedCornerShape(12.dp),
@@ -195,19 +209,14 @@ fun ActionSection(onStartClick: () -> Unit) {
             Spacer(modifier = Modifier.width(8.dp))
             Icon(Icons.Rounded.ArrowForward, contentDescription = null, tint = TextDark)
         }
-
         Spacer(modifier = Modifier.height(16.dp))
-
-        TextButton(onClick = { /* TODO: Import logic */ }) {
+        TextButton(onClick = { }) {
             Icon(Icons.Rounded.FileDownload, contentDescription = null, tint = TextGray, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
             Text("Import from Backup", color = TextGray, fontWeight = FontWeight.Medium)
         }
         Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = "By continuing you agree to our Terms of Service & Privacy Policy.",
-            fontSize = 10.sp, color = Color.LightGray, textAlign = TextAlign.Center
-        )
+        Text("By continuing you agree to our Terms of Service & Privacy Policy.", fontSize = 10.sp, color = Color.LightGray, textAlign = TextAlign.Center)
     }
 }
 
