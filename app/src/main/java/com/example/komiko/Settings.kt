@@ -42,7 +42,8 @@ private val ColorPrimary = Color(0xFFEE9D2B)
 fun SettingsScreen(
     isDarkTheme: Boolean,
     onThemeChange: (Boolean) -> Unit,
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    onBackupClick: () -> Unit = {} // Added Parameter
 ) {
     val scrollState = rememberScrollState()
     var showThemeDialog by remember { mutableStateOf(false) }
@@ -146,7 +147,7 @@ fun SettingsScreen(
                 .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Spacer for top padding (since we removed the top card)
+            // Spacer for top padding
             Spacer(modifier = Modifier.height(16.dp))
 
             // --- Section: General ---
@@ -190,7 +191,7 @@ fun SettingsScreen(
                             tint = secondaryTextColor
                         )
                     },
-                    onClick = { /* Handle Click */ }
+                    onClick = { onBackupClick() } // Connected Callback
                 )
             }
 

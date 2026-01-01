@@ -67,6 +67,7 @@ class MainActivity : ComponentActivity() {
 
             // 2. Pass state to the Theme Wrapper
             KomikOTheme(darkTheme = isDarkTheme) {
+                // Ensure list is mutable to allow clearing/adding all for restore
                 val mangaList = remember { mutableStateListOf<Manga>() }
                 var currentScreen by remember { mutableStateOf("dashboard") }
                 var selectedManga by remember { mutableStateOf<Manga?>(null) }
@@ -120,7 +121,19 @@ class MainActivity : ComponentActivity() {
                         SettingsScreen(
                             isDarkTheme = isDarkTheme,
                             onThemeChange = { isDark -> isDarkTheme = isDark },
-                            onBackClick = { currentScreen = "library" }
+                            onBackClick = { currentScreen = "library" },
+                            onBackupClick = { currentScreen = "backup_restore" } // Navigate to Backup
+                        )
+                    }
+                    "backup_restore" -> {
+                        BackupRestoreScreen(
+                            isDarkTheme = isDarkTheme,
+                            mangaList = mangaList,
+                            onRestore = { restoredList ->
+                                mangaList.clear()
+                                mangaList.addAll(restoredList)
+                            },
+                            onBack = { currentScreen = "settings" }
                         )
                     }
                 }
@@ -233,18 +246,12 @@ fun ActionSection(isDarkTheme: Boolean, subColor: Color, onStartClick: () -> Uni
             Spacer(modifier = Modifier.width(8.dp))
             Icon(Icons.Rounded.ArrowForward, contentDescription = null, tint = TextDark)
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = { }) {
-            Icon(Icons.Rounded.FileDownload, contentDescription = null, tint = subColor, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Import from Backup", color = subColor, fontWeight = FontWeight.Medium)
-        }
+
         Spacer(modifier = Modifier.height(24.dp))
         Text("By continuing you agree to our Terms of Service & Privacy Policy.", fontSize = 10.sp, color = subColor.copy(alpha=0.6f), textAlign = TextAlign.Center)
     }
 }
 
-// THIS CLASS MUST BE AT THE BOTTOM OR TOP, OUTSIDE OTHER CLASSES/FUNCTIONS
 data class FeatureData(
     val title: String,
     val subtitle: String,

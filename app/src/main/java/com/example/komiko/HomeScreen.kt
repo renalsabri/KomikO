@@ -1,4 +1,3 @@
-// HomeScreen.kt
 package com.example.komiko
 
 import androidx.compose.foundation.BorderStroke
