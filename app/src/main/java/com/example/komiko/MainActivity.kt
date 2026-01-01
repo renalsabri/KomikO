@@ -18,7 +18,7 @@ import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.WifiOff
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.* // Import needed for var, by, remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,12 +27,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.BorderStroke
+import com.example.komiko.ui.theme.KomikOTheme
 
-// 1. Color Definitions based on the image
+// Color Definitions
 val KomikoOrange = Color(0xFFF0A500)
 val KomikoLightOrange = Color(0xFFFFF4E0)
 val TextDark = Color(0xFF1A1A1A)
@@ -42,40 +42,39 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
-                KomikoHomeScreen()
+            KomikOTheme {
+                // This variable decides which screen to show
+                var currentScreen by remember { mutableStateOf("dashboard") }
+
+                if (currentScreen == "dashboard") {
+                    // Pass a function to change the screen when button is clicked
+                    KomikoHomeScreen(onStartTracking = { currentScreen = "library" })
+                } else {
+                    // Show the Empty Library screen (from HomeScreen.kt)
+                    EmptyLibraryScreen()
+                }
             }
         }
     }
 }
 
+// 1. Update KomikoHomeScreen to accept the click action
 @Composable
-fun KomikoHomeScreen() {
-    // Main Container with Vertical Scroll
+fun KomikoHomeScreen(onStartTracking: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
             .verticalScroll(rememberScrollState())
     ) {
-        // Top Header Section
         HeaderSection()
-
         Spacer(modifier = Modifier.height(24.dp))
-
-        // Title and Description
         TextSection()
-
         Spacer(modifier = Modifier.height(32.dp))
-
-        // Horizontal Feature Cards
         FeaturesSection()
-
         Spacer(modifier = Modifier.height(48.dp))
-
-        // Bottom Action Buttons
-        ActionSection()
-
+        // Pass the action down to ActionSection
+        ActionSection(onStartClick = onStartTracking)
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
@@ -85,7 +84,7 @@ fun HeaderSection() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(300.dp) // Height to mimic the image area
+            .height(300.dp)
             .clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
             .background(
                 brush = Brush.verticalGradient(
@@ -95,14 +94,12 @@ fun HeaderSection() {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // App Title
             Text(
                 text = "Kom!kO",
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
-            // Optional subtitle inside header
             Text(
                 text = "Track. Read. Enjoy.",
                 fontSize = 16.sp,
@@ -126,9 +123,7 @@ fun TextSection() {
             textAlign = TextAlign.Center,
             lineHeight = 36.sp
         )
-
         Spacer(modifier = Modifier.height(16.dp))
-
         Text(
             text = "Keep track of your chapters without an internet connection. The ultimate companion for the on-the-go otaku.",
             fontSize = 16.sp,
@@ -145,7 +140,6 @@ fun FeaturesSection() {
         FeatureData("Smart Sync", "Update later", Icons.Rounded.Sync),
         FeatureData("Ad-Free", "Pure reading", Icons.Rounded.Block),
     )
-
     LazyRow(
         contentPadding = PaddingValues(horizontal = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -163,116 +157,58 @@ fun FeatureCard(feature: FeatureData) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, Color(0xFFEEEEEE)),
-        modifier = Modifier
-            .width(140.dp)
-            .height(140.dp)
+        modifier = Modifier.width(140.dp).height(140.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.Start
         ) {
-            // Icon with circle background
             Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(KomikoLightOrange, CircleShape),
+                modifier = Modifier.size(40.dp).background(KomikoLightOrange, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = feature.icon,
-                    contentDescription = null,
-                    tint = KomikoOrange
-                )
+                Icon(feature.icon, contentDescription = null, tint = KomikoOrange)
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = feature.title,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = TextDark
-            )
-            Text(
-                text = feature.subtitle,
-                fontSize = 12.sp,
-                color = TextGray
-            )
+            Text(feature.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextDark)
+            Text(feature.subtitle, fontSize = 12.sp, color = TextGray)
         }
     }
 }
 
+// 2. Update ActionSection to receive the click event
 @Composable
-fun ActionSection() {
+fun ActionSection(onStartClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(horizontal = 24.dp)
     ) {
-        // Main CTA Button
         Button(
-            onClick = { /* TODO: Navigate to library */ },
+            // 3. Trigger the navigation here
+            onClick = onStartClick,
             colors = ButtonDefaults.buttonColors(containerColor = KomikoOrange),
             shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
+            modifier = Modifier.fillMaxWidth().height(56.dp)
         ) {
-            Text(
-                text = "Start Tracking",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextDark
-            )
+            Text("Start Tracking", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
             Spacer(modifier = Modifier.width(8.dp))
-            Icon(
-                imageVector = Icons.Rounded.ArrowForward,
-                contentDescription = null,
-                tint = TextDark
-            )
+            Icon(Icons.Rounded.ArrowForward, contentDescription = null, tint = TextDark)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Secondary Action (Import)
         TextButton(onClick = { /* TODO: Import logic */ }) {
-            Icon(
-                imageVector = Icons.Rounded.FileDownload,
-                contentDescription = null,
-                tint = TextGray,
-                modifier = Modifier.size(18.dp)
-            )
+            Icon(Icons.Rounded.FileDownload, contentDescription = null, tint = TextGray, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Import from Backup",
-                color = TextGray,
-                fontWeight = FontWeight.Medium
-            )
+            Text("Import from Backup", color = TextGray, fontWeight = FontWeight.Medium)
         }
-
         Spacer(modifier = Modifier.height(24.dp))
-
-        // Footer Text
         Text(
             text = "By continuing you agree to our Terms of Service & Privacy Policy.",
-            fontSize = 10.sp,
-            color = Color.LightGray,
-            textAlign = TextAlign.Center
+            fontSize = 10.sp, color = Color.LightGray, textAlign = TextAlign.Center
         )
     }
 }
 
-// Data class for the feature cards
-data class FeatureData(
-    val title: String,
-    val subtitle: String,
-    val icon: ImageVector
-)
-
-@Preview(showBackground = true)
-@Composable
-fun KomikoPreview() {
-    MaterialTheme {
-        KomikoHomeScreen()
-    }
-}
+data class FeatureData(val title: String, val subtitle: String, val icon: ImageVector)
