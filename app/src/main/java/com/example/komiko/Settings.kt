@@ -1,10 +1,10 @@
-// Settings.kt
 package com.example.komiko
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -21,21 +21,89 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 
-private val ColorTextMain = Color(0xFF181511)
-private val ColorTextSecondary = Color(0xFF897961)
+private val ColorTextMainLight = Color(0xFF181511)
+private val ColorTextSecondaryLight = Color(0xFF897961)
+private val ColorTextMainDark = Color(0xFFF4F3F0)
+private val ColorTextSecondaryDark = Color(0xFFA89C8A)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    isDarkTheme: Boolean,
+    onThemeChange: (Boolean) -> Unit,
     onBackClick: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
+    var showThemeDialog by remember { mutableStateOf(false) }
+
+    // Resolve current colors based on theme state
+    val backgroundColor = if (isDarkTheme) ColorBackgroundDark else ColorBackgroundLight
+    val surfaceColor = if (isDarkTheme) ColorSurfaceDark else ColorSurfaceLight
+    val mainTextColor = if (isDarkTheme) ColorTextMainDark else ColorTextMainLight
+    val secondaryTextColor = if (isDarkTheme) ColorTextSecondaryDark else ColorTextSecondaryLight
+
+    // Theme Selection Dialog
+    if (showThemeDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeDialog = false },
+            containerColor = surfaceColor,
+            title = { Text("Choose Theme", color = mainTextColor) },
+            text = {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = !isDarkTheme,
+                                onClick = { onThemeChange(false); showThemeDialog = false },
+                                role = Role.RadioButton
+                            )
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = !isDarkTheme,
+                            onClick = null,
+                            colors = RadioButtonDefaults.colors(selectedColor = ColorPrimary, unselectedColor = secondaryTextColor)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Light Mode", color = mainTextColor)
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = isDarkTheme,
+                                onClick = { onThemeChange(true); showThemeDialog = false },
+                                role = Role.RadioButton
+                            )
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = isDarkTheme,
+                            onClick = null,
+                            colors = RadioButtonDefaults.colors(selectedColor = ColorPrimary, unselectedColor = secondaryTextColor)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Dark Mode", color = mainTextColor)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeDialog = false }) {
+                    Text("Cancel", color = ColorPrimary)
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -45,7 +113,7 @@ fun SettingsScreen(
                         text = "Settings",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            color = ColorTextMain
+                            color = mainTextColor
                         )
                     )
                 },
@@ -54,16 +122,16 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = ColorTextMain
+                            tint = mainTextColor
                         )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = ColorBackgroundLight
+                    containerColor = backgroundColor
                 )
             )
         },
-        containerColor = ColorBackgroundLight
+        containerColor = backgroundColor
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -74,47 +142,49 @@ fun SettingsScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // --- Profile / Cloud Sync Section ---
-            CloudSyncCard()
+            CloudSyncCard(surfaceColor, mainTextColor, secondaryTextColor)
 
             Spacer(modifier = Modifier.height(8.dp))
 
             // --- Section: General ---
-            SettingsSectionHeader(title = "General")
-            SettingsGroup {
+            SettingsSectionHeader(title = "General", textColor = secondaryTextColor)
+            SettingsGroup(backgroundColor = surfaceColor) {
                 SettingsTile(
                     icon = Icons.Default.Palette,
                     title = "Appearance",
+                    textColor = mainTextColor,
+                    iconBgColor = backgroundColor,
                     trailingContent = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "System",
+                                text = if (isDarkTheme) "Dark Mode" else "Light Mode",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = ColorTextSecondary
+                                color = secondaryTextColor
                             )
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription = null,
-                                tint = ColorTextSecondary
+                                tint = secondaryTextColor
                             )
                         }
                     },
-                    onClick = { /* Handle Click */ }
+                    onClick = { showThemeDialog = true }
                 )
             }
 
-            // REMOVED: Reader Section (Keep Screen On)
-
             // --- Section: Data & Storage ---
-            SettingsSectionHeader(title = "Data & Storage")
-            SettingsGroup {
+            SettingsSectionHeader(title = "Data & Storage", textColor = secondaryTextColor)
+            SettingsGroup(backgroundColor = surfaceColor) {
                 SettingsTile(
                     icon = Icons.Default.Backup,
                     title = "Backup & Restore",
+                    textColor = mainTextColor,
+                    iconBgColor = backgroundColor,
                     trailingContent = {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = null,
-                            tint = ColorTextSecondary
+                            tint = secondaryTextColor
                         )
                     },
                     onClick = { /* Handle Click */ }
@@ -126,13 +196,13 @@ fun SettingsScreen(
             Text(
                 text = "Manga Reader v1.0.0",
                 style = MaterialTheme.typography.bodySmall,
-                color = ColorTextSecondary,
+                color = secondaryTextColor,
                 fontWeight = FontWeight.Medium
             )
             Text(
                 text = "Build 2023.10.24",
                 style = MaterialTheme.typography.labelSmall,
-                color = ColorTextSecondary.copy(alpha = 0.6f)
+                color = secondaryTextColor.copy(alpha = 0.6f)
             )
         }
     }
@@ -141,13 +211,13 @@ fun SettingsScreen(
 // --- Components ---
 
 @Composable
-fun CloudSyncCard() {
+fun CloudSyncCard(surfaceColor: Color, mainTextColor: Color, secondaryTextColor: Color) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = ColorSurfaceLight),
+        colors = CardDefaults.cardColors(containerColor = surfaceColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -157,14 +227,13 @@ fun CloudSyncCard() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Avatar with border
+            // Avatar
             Box(
                 modifier = Modifier
                     .size(80.dp)
                     .clip(CircleShape)
-                    .background(Color.Gray.copy(alpha = 0.1f)) // Placeholder bg
+                    .background(Color.Gray.copy(alpha = 0.1f))
             ) {
-                // In a real app, use AsyncImage here
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -177,7 +246,7 @@ fun CloudSyncCard() {
                     text = "Cloud Sync",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = ColorTextMain
+                    color = mainTextColor
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -203,7 +272,7 @@ fun CloudSyncCard() {
                 Text(
                     text = "1.2GB of 5GB used",
                     style = MaterialTheme.typography.bodySmall,
-                    color = ColorTextSecondary,
+                    color = secondaryTextColor,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
@@ -227,7 +296,7 @@ fun CloudSyncCard() {
 }
 
 @Composable
-fun SettingsSectionHeader(title: String) {
+fun SettingsSectionHeader(title: String, textColor: Color) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -236,21 +305,21 @@ fun SettingsSectionHeader(title: String) {
         Text(
             text = title.uppercase(),
             style = MaterialTheme.typography.labelMedium,
-            color = ColorTextSecondary,
+            color = textColor,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 0.05.sp.value.sp // Approximate tracking
+            letterSpacing = 0.05.sp.value.sp
         )
     }
 }
 
 @Composable
-fun SettingsGroup(content: @Composable ColumnScope.() -> Unit) {
+fun SettingsGroup(backgroundColor: Color, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(ColorSurfaceLight),
+            .background(backgroundColor),
         content = content
     )
 }
@@ -259,6 +328,8 @@ fun SettingsGroup(content: @Composable ColumnScope.() -> Unit) {
 fun SettingsTile(
     icon: ImageVector,
     title: String,
+    textColor: Color,
+    iconBgColor: Color,
     trailingContent: @Composable () -> Unit,
     onClick: () -> Unit
 ) {
@@ -276,13 +347,13 @@ fun SettingsTile(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(ColorBackgroundLight), // Light grey bg for icon
+                .background(iconBgColor),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = ColorTextMain,
+                tint = textColor,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -291,20 +362,12 @@ fun SettingsTile(
         Text(
             text = title,
             style = MaterialTheme.typography.bodyLarge,
-            color = ColorTextMain,
+            color = textColor,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f)
         )
 
-        // Trailing (Arrow, Switch, or Text)
+        // Trailing
         trailingContent()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SettingsPreview() {
-    MaterialTheme {
-        SettingsScreen()
     }
 }

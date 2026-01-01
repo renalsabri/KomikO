@@ -1,4 +1,3 @@
-// MainActivity.kt
 package com.example.komiko
 
 import android.os.Bundle
@@ -6,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -53,7 +53,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            KomikOTheme {
+            // 1. Manage Theme State Here
+            val systemDark = isSystemInDarkTheme()
+            var isDarkTheme by remember { mutableStateOf(systemDark) }
+
+            // 2. Pass state to the Theme Wrapper
+            KomikOTheme(darkTheme = isDarkTheme) {
                 val mangaList = remember { mutableStateListOf<Manga>() }
                 var currentScreen by remember { mutableStateOf("dashboard") }
 
@@ -73,7 +78,7 @@ class MainActivity : ComponentActivity() {
                                 selectedManga = manga
                                 currentScreen = "details"
                             },
-                            onSettingsClick = { // Added navigation to settings
+                            onSettingsClick = {
                                 currentScreen = "settings"
                             }
                         )
@@ -106,8 +111,11 @@ class MainActivity : ComponentActivity() {
                             currentScreen = "library"
                         }
                     }
-                    "settings" -> { // Added Settings Case
+                    "settings" -> {
+                        // 3. Pass state and setter to SettingsScreen
                         SettingsScreen(
+                            isDarkTheme = isDarkTheme,
+                            onThemeChange = { isDark -> isDarkTheme = isDark },
                             onBackClick = { currentScreen = "library" }
                         )
                     }
@@ -118,7 +126,7 @@ class MainActivity : ComponentActivity() {
 }
 
 // ... Rest of the MainActivity.kt (KomikoHomeScreen, HeaderSection, etc.) remains the same ...
-// You can keep the existing @Composable functions below this line as they were in your original file.
+// (Ensure you include the helper functions KomikoHomeScreen, HeaderSection etc. here if you are replacing the whole file)
 @Composable
 fun KomikoHomeScreen(onStartTracking: () -> Unit) {
     Column(
