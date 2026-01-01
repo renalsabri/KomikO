@@ -27,19 +27,27 @@ private val KomikoLightOrangeBg = Color(0xFFFFF8E1)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
+    isDarkTheme: Boolean, // Added Parameter
     mangaList: List<Manga>,
     onAddMangaClick: () -> Unit,
     onMangaClick: (Manga) -> Unit,
-    onSettingsClick: () -> Unit // ADDED: Callback for settings button
+    onSettingsClick: () -> Unit
 ) {
+    // Resolve Colors
+    val backgroundColor = if (isDarkTheme) Color(0xFF221A10) else Color.White
+    val surfaceColor = if (isDarkTheme) Color(0xFF2C241B) else Color.White
+    val mainTextColor = if (isDarkTheme) Color(0xFFF4F3F0) else Color(0xFF1A1A1A)
+    val secondaryTextColor = if (isDarkTheme) Color(0xFFA89C8A) else Color(0xFF666666)
+    val borderColor = if (isDarkTheme) Color.White.copy(alpha=0.1f) else Color(0xFFEEEEEE)
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Kom!kO", fontWeight = FontWeight.Bold, fontSize = 24.sp, color = KomikoOrange) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White),
-                navigationIcon = { // ADDED: Settings Button on Left
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = surfaceColor),
+                navigationIcon = {
                     IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = TextDark)
+                        Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = mainTextColor)
                     }
                 },
                 actions = {
@@ -51,7 +59,7 @@ fun LibraryScreen(
                 }
             )
         },
-        containerColor = Color.White,
+        containerColor = backgroundColor,
         floatingActionButton = {
             if (mangaList.isNotEmpty()) {
                 FloatingActionButton(
@@ -75,9 +83,9 @@ fun LibraryScreen(
                     Icon(Icons.Rounded.LibraryBooks, null, tint = KomikoOrange, modifier = Modifier.size(80.dp))
                 }
                 Spacer(modifier = Modifier.height(32.dp))
-                Text("Library is Empty", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                Text("Library is Empty", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = mainTextColor)
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("It looks like you haven't added any manga yet. Start building your offline collection now!", fontSize = 16.sp, color = TextGray, textAlign = TextAlign.Center, lineHeight = 24.sp)
+                Text("It looks like you haven't added any manga yet. Start building your offline collection now!", fontSize = 16.sp, color = secondaryTextColor, textAlign = TextAlign.Center, lineHeight = 24.sp)
                 Spacer(modifier = Modifier.height(48.dp))
                 Button(
                     onClick = onAddMangaClick,
@@ -100,6 +108,10 @@ fun LibraryScreen(
                 items(mangaList) { manga ->
                     MangaListItem(
                         manga = manga,
+                        cardColor = surfaceColor,
+                        borderColor = borderColor,
+                        mainTextColor = mainTextColor,
+                        secondaryTextColor = secondaryTextColor,
                         onClick = { onMangaClick(manga) }
                     )
                 }
@@ -109,11 +121,18 @@ fun LibraryScreen(
 }
 
 @Composable
-fun MangaListItem(manga: Manga, onClick: () -> Unit) {
+fun MangaListItem(
+    manga: Manga,
+    cardColor: Color,
+    borderColor: Color,
+    mainTextColor: Color,
+    secondaryTextColor: Color,
+    onClick: () -> Unit
+) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEEEEEE)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -126,12 +145,12 @@ fun MangaListItem(manga: Manga, onClick: () -> Unit) {
             Box(
                 modifier = Modifier
                     .size(60.dp, 80.dp)
-                    .background(Color.LightGray, RoundedCornerShape(8.dp))
+                    .background(Color.LightGray.copy(alpha=0.3f), RoundedCornerShape(8.dp))
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(text = manga.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextDark)
-                Text(text = manga.author, fontSize = 14.sp, color = TextGray)
+                Text(text = manga.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = mainTextColor)
+                Text(text = manga.author, fontSize = 14.sp, color = secondaryTextColor)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(

@@ -4,7 +4,6 @@ package com.example.komiko
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -35,36 +34,35 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// --- Color Definitions ---
-val ColorPrimary = Color(0xFFEE9D2B)
-val ColorBackgroundLight = Color(0xFFF8F7F6)
-val ColorBackgroundDark = Color(0xFF221A10)
-val ColorSurfaceLight = Color(0xFFFFFFFF)
-val ColorSurfaceDark = Color(0xFF2D2418)
-val ColorBorderLight = Color(0xFFE6E1DB)
-val ColorBorderDark = Color(0xFF3A2E22)
-val ColorTextLight = Color(0xFF181511)
-val ColorTextDark = Color(0xFFF3F4F6)
-val ColorPlaceholder = Color(0xFF897961)
+// Reusing global definitions where possible, or defining local specific shades
+private val DetailsColorPrimary = Color(0xFFEE9D2B)
+private val DetailsBgLight = Color(0xFFF8F7F6)
+private val DetailsBgDark = Color(0xFF221A10)
+private val DetailsSurfaceLight = Color(0xFFFFFFFF)
+private val DetailsSurfaceDark = Color(0xFF2C241B)
+private val DetailsBorderLight = Color(0xFFE6E1DB)
+private val DetailsBorderDark = Color(0xFF3A2E22)
+private val DetailsTextLight = Color(0xFF181511)
+private val DetailsTextDark = Color(0xFFF3F4F6)
+private val DetailsPlaceholder = Color(0xFF897961)
 
 @Composable
 fun MangaDetailsScreen(
-    manga: Manga, // Now accepts the manga object to display
+    isDarkTheme: Boolean, // Added Param
+    manga: Manga,
     onBackClick: () -> Unit,
-    onSaveClick: (Manga) -> Unit // Returns the modified manga
+    onSaveClick: (Manga) -> Unit
 ) {
-    val isDark = isSystemInDarkTheme()
-    val backgroundColor = if (isDark) ColorBackgroundDark else ColorBackgroundLight
-    val surfaceColor = if (isDark) ColorSurfaceDark else ColorSurfaceLight
-    val textColor = if (isDark) ColorTextDark else ColorTextLight
-    val borderColor = if (isDark) ColorBorderDark else ColorBorderLight
+    // Resolve Colors using passed parameter
+    val backgroundColor = if (isDarkTheme) DetailsBgDark else DetailsBgLight
+    val surfaceColor = if (isDarkTheme) DetailsSurfaceDark else DetailsSurfaceLight
+    val textColor = if (isDarkTheme) DetailsTextDark else DetailsTextLight
+    val borderColor = if (isDarkTheme) DetailsBorderDark else DetailsBorderLight
 
-    // Initialize State with existing Manga data
+    // Initialize State
     var title by remember { mutableStateOf(manga.title) }
     var author by remember { mutableStateOf(manga.author) }
     var selectedStatus by remember { mutableStateOf(manga.status) }
-
-    // Safety check for integer conversion
     var chaptersRead by remember { mutableIntStateOf(manga.chaptersRead.toIntOrNull() ?: 0) }
     var totalChapters by remember { mutableStateOf(manga.totalChapters) }
     var rating by remember { mutableIntStateOf(manga.rating) }
@@ -75,21 +73,11 @@ fun MangaDetailsScreen(
         containerColor = backgroundColor,
         topBar = {
             TopBar(
-                title = "Manga Details", // Changed title
+                title = "Manga Details",
                 textColor = textColor,
                 onBackClick = onBackClick,
                 onSaveClick = {
-                    // Return updated object
-                    onSaveClick(
-                        Manga(
-                            title = title,
-                            author = author,
-                            status = selectedStatus,
-                            chaptersRead = chaptersRead.toString(),
-                            totalChapters = totalChapters,
-                            rating = rating
-                        )
-                    )
+                    onSaveClick(Manga(title, author, selectedStatus, chaptersRead.toString(), totalChapters, rating))
                 }
             )
         }
@@ -108,7 +96,7 @@ fun MangaDetailsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 DashedImagePlaceholder(
-                    isDark = isDark,
+                    isDark = isDarkTheme, // Pass state
                     onClick = { /* Handle Image Picker */ }
                 )
             }
@@ -137,110 +125,49 @@ fun MangaDetailsScreen(
 
             // 3. Status Selector
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = "Status",
-                    color = textColor,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = "Status", color = textColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 FlowRowLikeLayout(spacing = 8.dp) {
                     statusOptions.forEach { status ->
-                        StatusChip(
-                            text = status,
-                            isSelected = status == selectedStatus,
-                            onSelect = { selectedStatus = status },
-                            surfaceColor = surfaceColor,
-                            borderColor = borderColor,
-                            textColor = textColor
-                        )
+                        StatusChip(text = status, isSelected = status == selectedStatus, onSelect = { selectedStatus = status }, surfaceColor = surfaceColor, borderColor = borderColor, textColor = textColor)
                     }
                 }
             }
 
+            // 4. Progress
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = "Progress",
-                    color = textColor,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = "Progress", color = textColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Chapters Read",
-                            color = ColorPlaceholder,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
-                        )
+                        Text(text = "Chapters Read", color = DetailsPlaceholder, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 8.dp, start = 4.dp))
                         Row(
-                            modifier = Modifier
-                                .height(56.dp)
-                                .shadow(1.dp, RoundedCornerShape(8.dp))
-                                .background(surfaceColor, RoundedCornerShape(8.dp))
-                                .border(1.dp, borderColor, RoundedCornerShape(8.dp)),
+                            modifier = Modifier.height(56.dp).shadow(1.dp, RoundedCornerShape(8.dp)).background(surfaceColor, RoundedCornerShape(8.dp)).border(1.dp, borderColor, RoundedCornerShape(8.dp)),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = { if (chaptersRead > 0) chaptersRead-- }) {
-                                Icon(Icons.Default.Remove, null, tint = ColorPlaceholder)
-                            }
-                            Text(
-                                text = chaptersRead.toString(),
-                                modifier = Modifier.weight(1f),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                color = textColor,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 18.sp
-                            )
-                            IconButton(onClick = { chaptersRead++ }) {
-                                Icon(Icons.Default.Add, null, tint = ColorPlaceholder)
-                            }
+                            IconButton(onClick = { if (chaptersRead > 0) chaptersRead-- }) { Icon(Icons.Default.Remove, null, tint = DetailsPlaceholder) }
+                            Text(text = chaptersRead.toString(), modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center, color = textColor, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                            IconButton(onClick = { chaptersRead++ }) { Icon(Icons.Default.Add, null, tint = DetailsPlaceholder) }
                         }
                     }
 
-                    Text(
-                        text = "/",
-                        fontSize = 24.sp,
-                        color = ColorPlaceholder,
-                        fontWeight = FontWeight.Light,
-                        modifier = Modifier.padding(top = 24.dp)
-                    )
+                    Text(text = "/", fontSize = 24.sp, color = DetailsPlaceholder, fontWeight = FontWeight.Light, modifier = Modifier.padding(top = 24.dp))
 
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Total Chapters",
-                            color = ColorPlaceholder,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
-                        )
+                        Text(text = "Total Chapters", color = DetailsPlaceholder, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(bottom = 8.dp, start = 4.dp))
                         Box(
-                            modifier = Modifier
-                                .height(56.dp)
-                                .shadow(1.dp, RoundedCornerShape(8.dp))
-                                .background(surfaceColor, RoundedCornerShape(8.dp))
-                                .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-                                .padding(horizontal = 12.dp),
+                            modifier = Modifier.height(56.dp).shadow(1.dp, RoundedCornerShape(8.dp)).background(surfaceColor, RoundedCornerShape(8.dp)).border(1.dp, borderColor, RoundedCornerShape(8.dp)).padding(horizontal = 12.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             BasicTextField(
                                 value = totalChapters,
                                 onValueChange = { if (it.all { char -> char.isDigit() }) totalChapters = it },
-                                textStyle = LocalTextStyle.current.copy(
-                                    color = textColor,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                ),
+                                textStyle = LocalTextStyle.current.copy(color = textColor, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, textAlign = androidx.compose.ui.text.style.TextAlign.Center),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 decorationBox = { innerTextField ->
-                                    if (totalChapters.isEmpty()) {
-                                        Text(text = "?", color = ColorPlaceholder, fontSize = 18.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth())
-                                    }
+                                    if (totalChapters.isEmpty()) Text(text = "?", color = DetailsPlaceholder, fontSize = 18.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth())
                                     innerTextField()
                                 }
                             )
@@ -251,21 +178,14 @@ fun MangaDetailsScreen(
 
             // 5. Personal Rating
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "Personal Rating",
-                    color = textColor,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = "Personal Rating", color = textColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     for (i in 1..5) {
                         Icon(
                             imageVector = if (i <= rating) Icons.Filled.Star else Icons.Outlined.Star,
                             contentDescription = "Rate $i stars",
-                            tint = if (i <= rating) ColorPrimary else if (isDark) Color.Gray else Color.LightGray,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clickable { rating = i }
+                            tint = if (i <= rating) DetailsColorPrimary else if (isDarkTheme) Color.Gray else Color.LightGray,
+                            modifier = Modifier.size(36.dp).clickable { rating = i }
                         )
                     }
                 }
@@ -274,91 +194,45 @@ fun MangaDetailsScreen(
     }
 }
 
-// --- Components (Helper functions reused) ---
+// --- Components (Helper functions) ---
 
 @Composable
-fun TopBar(
-    title: String,
-    textColor: Color,
-    onBackClick: () -> Unit,
-    onSaveClick: () -> Unit
-) {
+fun TopBar(title: String, textColor: Color, onBackClick: () -> Unit, onSaveClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        IconButton(
-            onClick = onBackClick,
-            modifier = Modifier.size(48.dp).clip(CircleShape)
-        ) {
+        IconButton(onClick = onBackClick, modifier = Modifier.size(48.dp).clip(CircleShape)) {
             Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = textColor)
         }
-
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
-            color = textColor
-        )
-
-        TextButton(
-            onClick = onSaveClick,
-            shape = RoundedCornerShape(50),
-            colors = ButtonDefaults.textButtonColors(contentColor = ColorPrimary)
-        ) {
+        Text(text = title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp), color = textColor)
+        TextButton(onClick = onSaveClick, shape = RoundedCornerShape(50), colors = ButtonDefaults.textButtonColors(contentColor = DetailsColorPrimary)) {
             Text("Save", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
         }
     }
 }
 
 @Composable
-fun MangaInputField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    backgroundColor: Color,
-    borderColor: Color,
-    textColor: Color
-) {
+fun MangaInputField(label: String, value: String, onValueChange: (String) -> Unit, placeholder: String, backgroundColor: Color, borderColor: Color, textColor: Color) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(text = label, color = textColor, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(start = 4.dp))
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .shadow(1.dp, RoundedCornerShape(8.dp))
-                .background(backgroundColor, RoundedCornerShape(8.dp))
-                .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-                .padding(horizontal = 15.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp).shadow(1.dp, RoundedCornerShape(8.dp)).background(backgroundColor, RoundedCornerShape(8.dp)).border(1.dp, borderColor, RoundedCornerShape(8.dp)).padding(horizontal = 15.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            if (value.isEmpty()) Text(text = placeholder, color = ColorPlaceholder)
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                textStyle = LocalTextStyle.current.copy(color = textColor, fontSize = 16.sp),
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (value.isEmpty()) Text(text = placeholder, color = DetailsPlaceholder)
+            BasicTextField(value = value, onValueChange = onValueChange, textStyle = LocalTextStyle.current.copy(color = textColor, fontSize = 16.sp), modifier = Modifier.fillMaxWidth())
         }
     }
 }
 
 @Composable
 fun DashedImagePlaceholder(isDark: Boolean, onClick: () -> Unit) {
-    val borderColor = ColorPrimary.copy(alpha = 0.4f)
+    val borderColor = DetailsColorPrimary.copy(alpha = 0.4f)
     val contentColor = if (isDark) Color.Gray else Color(0xFF897961)
-
     Box(
-        modifier = Modifier
-            .width(160.dp)
-            .aspectRatio(3f / 4f)
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (isDark) ColorSurfaceDark else ColorSurfaceLight)
-            .clickable { onClick() }
-            .drawDashedBorder(2.dp, borderColor, 8.dp),
+        modifier = Modifier.width(160.dp).aspectRatio(3f / 4f).clip(RoundedCornerShape(8.dp)).background(if (isDark) DetailsSurfaceDark else DetailsSurfaceLight).clickable { onClick() }.drawDashedBorder(2.dp, borderColor, 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
@@ -374,22 +248,38 @@ fun StatusChip(text: String, isSelected: Boolean, onSelect: () -> Unit, surfaceC
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(50))
-            .background(if (isSelected) ColorPrimary else surfaceColor)
-            .border(if (isSelected) 0.dp else 1.dp, if (isSelected) Color.Transparent else borderColor, RoundedCornerShape(50))
+            .background(if (isSelected) DetailsColorPrimary else surfaceColor)
+            .border(1.dp, if (isSelected) DetailsColorPrimary else borderColor, RoundedCornerShape(50))
             .clickable { onSelect() }
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        Text(text, color = if (isSelected) Color.White else textColor, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        Text(
+            text = text,
+            color = if (isSelected) Color.White else textColor,
+            fontSize = 14.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        )
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FlowRowLikeLayout(spacing: androidx.compose.ui.unit.Dp, content: @Composable () -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing), verticalArrangement = Arrangement.spacedBy(spacing)) { content() }
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(spacing),
+        verticalArrangement = Arrangement.spacedBy(spacing),
+        content = { content() }
+    )
 }
 
-fun Modifier.drawDashedBorder(strokeWidth: androidx.compose.ui.unit.Dp, color: Color, cornerRadius: androidx.compose.ui.unit.Dp): Modifier = this.drawBehind {
-    val stroke = Stroke(width = strokeWidth.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(20f, 20f), 0f))
+fun Modifier.drawDashedBorder(
+    strokeWidth: androidx.compose.ui.unit.Dp,
+    color: Color,
+    cornerRadius: androidx.compose.ui.unit.Dp
+): Modifier = this.drawBehind {
+    val stroke = Stroke(
+        width = strokeWidth.toPx(),
+        pathEffect = PathEffect.dashPathEffect(floatArrayOf(20f, 20f), 0f)
+    )
     drawRoundRect(color = color, style = stroke, cornerRadius = CornerRadius(cornerRadius.toPx()))
 }

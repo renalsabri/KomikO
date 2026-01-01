@@ -1,3 +1,4 @@
+// Settings.kt
 package com.example.komiko
 
 import androidx.compose.foundation.background
@@ -13,7 +14,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,11 +26,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-
+// --- Color Definitions ---
 private val ColorTextMainLight = Color(0xFF181511)
 private val ColorTextSecondaryLight = Color(0xFF897961)
 private val ColorTextMainDark = Color(0xFFF4F3F0)
 private val ColorTextSecondaryDark = Color(0xFFA89C8A)
+private val ColorBackgroundLight = Color(0xFFF8F7F6)
+private val ColorBackgroundDark = Color(0xFF221A10)
+private val ColorSurfaceLight = Color(0xFFFFFFFF)
+private val ColorSurfaceDark = Color(0xFF2C241B)
+private val ColorPrimary = Color(0xFFEE9D2B)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -141,10 +146,8 @@ fun SettingsScreen(
                 .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // --- Profile / Cloud Sync Section ---
-            CloudSyncCard(surfaceColor, mainTextColor, secondaryTextColor)
-
-            Spacer(modifier = Modifier.height(8.dp))
+            // Spacer for top padding (since we removed the top card)
+            Spacer(modifier = Modifier.height(16.dp))
 
             // --- Section: General ---
             SettingsSectionHeader(title = "General", textColor = secondaryTextColor)
@@ -209,91 +212,6 @@ fun SettingsScreen(
 }
 
 // --- Components ---
-
-@Composable
-fun CloudSyncCard(surfaceColor: Color, mainTextColor: Color, secondaryTextColor: Color) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = surfaceColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Avatar
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(Color.Gray.copy(alpha = 0.1f))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(ColorPrimary.copy(alpha = 0.2f))
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Cloud Sync",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = mainTextColor
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    LinearProgressIndicator(
-                        progress = { 0.45f },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = ColorPrimary,
-                        trackColor = Color.Gray.copy(alpha = 0.2f),
-                    )
-                    Text(
-                        text = "45%",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = ColorPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Text(
-                    text = "1.2GB of 5GB used",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = secondaryTextColor,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-
-            // Sync Button
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(ColorPrimary.copy(alpha = 0.1f))
-                    .clickable { /* Sync Action */ }
-                    .padding(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Sync,
-                    contentDescription = "Sync",
-                    tint = ColorPrimary
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun SettingsSectionHeader(title: String, textColor: Color) {

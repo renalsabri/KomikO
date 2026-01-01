@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.komiko.ui.theme.KomikOTheme
 
-// 1. Define the Data Model
+// Data Model
 data class Manga(
     val title: String,
     val author: String,
@@ -49,11 +49,17 @@ val KomikoLightOrange = Color(0xFFFFF4E0)
 val TextDark = Color(0xFF1A1A1A)
 val TextGray = Color(0xFF666666)
 
+// Dark Mode Specific Colors
+val DarkBackground = Color(0xFF221A10)
+val DarkSurface = Color(0xFF2C241B)
+val TextLightMain = Color(0xFFF4F3F0)
+val TextLightSec = Color(0xFFA89C8A)
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // 1. Manage Theme State Here
+            // 1. Manage Theme State
             val systemDark = isSystemInDarkTheme()
             var isDarkTheme by remember { mutableStateOf(systemDark) }
 
@@ -61,30 +67,30 @@ class MainActivity : ComponentActivity() {
             KomikOTheme(darkTheme = isDarkTheme) {
                 val mangaList = remember { mutableStateListOf<Manga>() }
                 var currentScreen by remember { mutableStateOf("dashboard") }
-
-                // New state to hold the manga currently being viewed/edited
                 var selectedManga by remember { mutableStateOf<Manga?>(null) }
 
                 when (currentScreen) {
                     "dashboard" -> {
-                        KomikoHomeScreen(onStartTracking = { currentScreen = "library" })
+                        KomikoHomeScreen(
+                            isDarkTheme = isDarkTheme, // Passed here
+                            onStartTracking = { currentScreen = "library" }
+                        )
                     }
                     "library" -> {
                         LibraryScreen(
+                            isDarkTheme = isDarkTheme, // Passed here
                             mangaList = mangaList,
                             onAddMangaClick = { currentScreen = "add_manga" },
                             onMangaClick = { manga ->
-                                // Set the selected manga and navigate to details
                                 selectedManga = manga
                                 currentScreen = "details"
                             },
-                            onSettingsClick = {
-                                currentScreen = "settings"
-                            }
+                            onSettingsClick = { currentScreen = "settings" }
                         )
                     }
                     "add_manga" -> {
                         AddMangaManualScreen(
+                            isDarkTheme = isDarkTheme, // Passed here
                             onBack = { currentScreen = "library" },
                             onSave = { newManga ->
                                 mangaList.add(newManga)
@@ -95,24 +101,20 @@ class MainActivity : ComponentActivity() {
                     "details" -> {
                         if (selectedManga != null) {
                             MangaDetailsScreen(
+                                isDarkTheme = isDarkTheme, // Passed here
                                 manga = selectedManga!!,
                                 onBackClick = { currentScreen = "library" },
                                 onSaveClick = { updatedManga ->
-                                    // Update the list with the new details
                                     val index = mangaList.indexOf(selectedManga)
-                                    if (index != -1) {
-                                        mangaList[index] = updatedManga
-                                    }
+                                    if (index != -1) mangaList[index] = updatedManga
                                     currentScreen = "library"
                                 }
                             )
                         } else {
-                            // Fallback if something goes wrong
                             currentScreen = "library"
                         }
                     }
                     "settings" -> {
-                        // 3. Pass state and setter to SettingsScreen
                         SettingsScreen(
                             isDarkTheme = isDarkTheme,
                             onThemeChange = { isDark -> isDarkTheme = isDark },
@@ -125,23 +127,27 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// ... Rest of the MainActivity.kt (KomikoHomeScreen, HeaderSection, etc.) remains the same ...
-// (Ensure you include the helper functions KomikoHomeScreen, HeaderSection etc. here if you are replacing the whole file)
 @Composable
-fun KomikoHomeScreen(onStartTracking: () -> Unit) {
+fun KomikoHomeScreen(isDarkTheme: Boolean, onStartTracking: () -> Unit) {
+    // Resolve colors based on theme
+    val backgroundColor = if (isDarkTheme) DarkBackground else Color.White
+    val mainTextColor = if (isDarkTheme) TextLightMain else TextDark
+    val secondaryTextColor = if (isDarkTheme) TextLightSec else TextGray
+    val cardColor = if (isDarkTheme) DarkSurface else Color.White
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(backgroundColor)
             .verticalScroll(rememberScrollState())
     ) {
         HeaderSection()
         Spacer(modifier = Modifier.height(24.dp))
-        TextSection()
+        TextSection(mainTextColor, secondaryTextColor)
         Spacer(modifier = Modifier.height(32.dp))
-        FeaturesSection()
+        FeaturesSection(isDarkTheme, cardColor, mainTextColor, secondaryTextColor)
         Spacer(modifier = Modifier.height(48.dp))
-        ActionSection(onStartClick = onStartTracking)
+        ActionSection(isDarkTheme, secondaryTextColor, onStartClick = onStartTracking)
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
@@ -168,33 +174,34 @@ fun HeaderSection() {
 }
 
 @Composable
-fun TextSection() {
+fun TextSection(mainColor: Color, subColor: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 24.dp)) {
-        Text("Your Manga,\nAnywhere.", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = TextDark, textAlign = TextAlign.Center, lineHeight = 36.sp)
+        Text("Your Manga,\nAnywhere.", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = mainColor, textAlign = TextAlign.Center, lineHeight = 36.sp)
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Keep track of your chapters without an internet connection. The ultimate companion for the on-the-go otaku.", fontSize = 16.sp, color = TextGray, textAlign = TextAlign.Center)
+        Text("Keep track of your chapters without an internet connection. The ultimate companion for the on-the-go otaku.", fontSize = 16.sp, color = subColor, textAlign = TextAlign.Center)
     }
 }
 
 @Composable
-fun FeaturesSection() {
+fun FeaturesSection(isDarkTheme: Boolean, cardColor: Color, mainColor: Color, subColor: Color) {
     val features = listOf(
         FeatureData("Offline First", "Read anytime", Icons.Rounded.WifiOff),
         FeatureData("Smart Sync", "Update later", Icons.Rounded.Sync),
         FeatureData("Ad-Free", "Pure reading", Icons.Rounded.Block),
     )
     LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        items(features) { feature -> FeatureCard(feature) }
+        items(features) { feature -> FeatureCard(feature, isDarkTheme, cardColor, mainColor, subColor) }
     }
 }
 
 @Composable
-fun FeatureCard(feature: FeatureData) {
+fun FeatureCard(feature: FeatureData, isDarkTheme: Boolean, cardColor: Color, mainColor: Color, subColor: Color) {
+    val borderColor = if(isDarkTheme) Color.White.copy(alpha=0.1f) else Color(0xFFEEEEEE)
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, Color(0xFFEEEEEE)),
+        border = BorderStroke(1.dp, borderColor),
         modifier = Modifier.width(140.dp).height(140.dp)
     ) {
         Column(
@@ -206,14 +213,14 @@ fun FeatureCard(feature: FeatureData) {
                 Icon(feature.icon, contentDescription = null, tint = KomikoOrange)
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Text(feature.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextDark)
-            Text(feature.subtitle, fontSize = 12.sp, color = TextGray)
+            Text(feature.title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = mainColor)
+            Text(feature.subtitle, fontSize = 12.sp, color = subColor)
         }
     }
 }
 
 @Composable
-fun ActionSection(onStartClick: () -> Unit) {
+fun ActionSection(isDarkTheme: Boolean, subColor: Color, onStartClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 24.dp)) {
         Button(
             onClick = onStartClick,
@@ -227,12 +234,12 @@ fun ActionSection(onStartClick: () -> Unit) {
         }
         Spacer(modifier = Modifier.height(16.dp))
         TextButton(onClick = { }) {
-            Icon(Icons.Rounded.FileDownload, contentDescription = null, tint = TextGray, modifier = Modifier.size(18.dp))
+            Icon(Icons.Rounded.FileDownload, contentDescription = null, tint = subColor, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Import from Backup", color = TextGray, fontWeight = FontWeight.Medium)
+            Text("Import from Backup", color = subColor, fontWeight = FontWeight.Medium)
         }
         Spacer(modifier = Modifier.height(24.dp))
-        Text("By continuing you agree to our Terms of Service & Privacy Policy.", fontSize = 10.sp, color = Color.LightGray, textAlign = TextAlign.Center)
+        Text("By continuing you agree to our Terms of Service & Privacy Policy.", fontSize = 10.sp, color = subColor.copy(alpha=0.6f), textAlign = TextAlign.Center)
     }
 }
 
