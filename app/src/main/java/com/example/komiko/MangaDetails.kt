@@ -101,7 +101,6 @@ fun MangaDetailsScreen(
                 )
             }
 
-            // 2. Title & Author
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 MangaInputField(
                     label = "Title",
@@ -113,7 +112,7 @@ fun MangaDetailsScreen(
                     textColor = textColor
                 )
                 MangaInputField(
-                    label = "Author / Website",
+                    label = "Website",
                     value = author,
                     onValueChange = { author = it },
                     placeholder = "e.g., Eiichiro Oda",
