@@ -33,6 +33,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 
 // Reusing global definitions where possible, or defining local specific shades
 private val DetailsColorPrimary = Color(0xFFEE9D2B)
@@ -48,24 +56,31 @@ private val DetailsPlaceholder = Color(0xFF897961)
 
 @Composable
 fun MangaDetailsScreen(
-    isDarkTheme: Boolean, // Added Param
+    isDarkTheme: Boolean,
     manga: Manga,
     onBackClick: () -> Unit,
     onSaveClick: (Manga) -> Unit
 ) {
-    // Resolve Colors using passed parameter
     val backgroundColor = if (isDarkTheme) DetailsBgDark else DetailsBgLight
     val surfaceColor = if (isDarkTheme) DetailsSurfaceDark else DetailsSurfaceLight
     val textColor = if (isDarkTheme) DetailsTextDark else DetailsTextLight
     val borderColor = if (isDarkTheme) DetailsBorderDark else DetailsBorderLight
 
-    // Initialize State
     var title by remember { mutableStateOf(manga.title) }
     var author by remember { mutableStateOf(manga.author) }
     var selectedStatus by remember { mutableStateOf(manga.status) }
     var chaptersRead by remember { mutableIntStateOf(manga.chaptersRead.toIntOrNull() ?: 0) }
     var totalChapters by remember { mutableStateOf(manga.totalChapters) }
     var rating by remember { mutableIntStateOf(manga.rating) }
+
+    // Image State
+    var coverUri by remember { mutableStateOf(manga.coverUri) }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) coverUri = uri.toString()
+    }
 
     val statusOptions = listOf("Reading", "Completed", "On Hold", "Dropped", "Plan to Read")
 
@@ -77,7 +92,7 @@ fun MangaDetailsScreen(
                 textColor = textColor,
                 onBackClick = onBackClick,
                 onSaveClick = {
-                    onSaveClick(Manga(title, author, selectedStatus, chaptersRead.toString(), totalChapters, rating))
+                    onSaveClick(Manga(title, author, selectedStatus, chaptersRead.toString(), totalChapters, rating, coverUri))
                 }
             )
         }
@@ -90,38 +105,41 @@ fun MangaDetailsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // 1. Cover Image Upload (Placeholder)
+            // 1. Cover Image (Editable)
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                DashedImagePlaceholder(
-                    isDark = isDarkTheme, // Pass state
-                    onClick = { /* Handle Image Picker */ }
-                )
+                if (coverUri != null) {
+                    AsyncImage(
+                        model = coverUri,
+                        contentDescription = "Cover",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .width(160.dp)
+                            .aspectRatio(3f / 4f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            }
+                    )
+                } else {
+                    DashedImagePlaceholder(
+                        isDark = isDarkTheme,
+                        onClick = {
+                            launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        }
+                    )
+                }
             }
 
+            // 2. Title & Author
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                MangaInputField(
-                    label = "Title",
-                    value = title,
-                    onValueChange = { title = it },
-                    placeholder = "e.g., One Piece",
-                    backgroundColor = surfaceColor,
-                    borderColor = borderColor,
-                    textColor = textColor
-                )
-                MangaInputField(
-                    label = "Website",
-                    value = author,
-                    onValueChange = { author = it },
-                    placeholder = "e.g., Eiichiro Oda",
-                    backgroundColor = surfaceColor,
-                    borderColor = borderColor,
-                    textColor = textColor
-                )
+                MangaInputField(label = "Title", value = title, onValueChange = { title = it }, placeholder = "e.g., One Piece", backgroundColor = surfaceColor, borderColor = borderColor, textColor = textColor)
+                MangaInputField(label = "Author / Website", value = author, onValueChange = { author = it }, placeholder = "e.g., Eiichiro Oda", backgroundColor = surfaceColor, borderColor = borderColor, textColor = textColor)
             }
 
+            // ... (Rest of the UI: Status, Progress, Rating remains identical to previous version) ...
             // 3. Status Selector
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(text = "Status", color = textColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)

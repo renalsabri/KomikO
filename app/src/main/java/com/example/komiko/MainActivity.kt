@@ -1,3 +1,4 @@
+// MainActivity.kt
 package com.example.komiko
 
 import android.os.Bundle
@@ -33,14 +34,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.komiko.ui.theme.KomikOTheme
 
-// Data Model
+// 1. Define the Data Model
 data class Manga(
     val title: String,
     val author: String,
     val status: String,
     val chaptersRead: String,
     val totalChapters: String,
-    val rating: Int
+    val rating: Int,
+    val coverUri: String? = null
 )
 
 // Global Colors
@@ -72,13 +74,13 @@ class MainActivity : ComponentActivity() {
                 when (currentScreen) {
                     "dashboard" -> {
                         KomikoHomeScreen(
-                            isDarkTheme = isDarkTheme, // Passed here
+                            isDarkTheme = isDarkTheme,
                             onStartTracking = { currentScreen = "library" }
                         )
                     }
                     "library" -> {
                         LibraryScreen(
-                            isDarkTheme = isDarkTheme, // Passed here
+                            isDarkTheme = isDarkTheme,
                             mangaList = mangaList,
                             onAddMangaClick = { currentScreen = "add_manga" },
                             onMangaClick = { manga ->
@@ -90,7 +92,7 @@ class MainActivity : ComponentActivity() {
                     }
                     "add_manga" -> {
                         AddMangaManualScreen(
-                            isDarkTheme = isDarkTheme, // Passed here
+                            isDarkTheme = isDarkTheme,
                             onBack = { currentScreen = "library" },
                             onSave = { newManga ->
                                 mangaList.add(newManga)
@@ -101,7 +103,7 @@ class MainActivity : ComponentActivity() {
                     "details" -> {
                         if (selectedManga != null) {
                             MangaDetailsScreen(
-                                isDarkTheme = isDarkTheme, // Passed here
+                                isDarkTheme = isDarkTheme,
                                 manga = selectedManga!!,
                                 onBackClick = { currentScreen = "library" },
                                 onSaveClick = { updatedManga ->
@@ -129,7 +131,6 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun KomikoHomeScreen(isDarkTheme: Boolean, onStartTracking: () -> Unit) {
-    // Resolve colors based on theme
     val backgroundColor = if (isDarkTheme) DarkBackground else Color.White
     val mainTextColor = if (isDarkTheme) TextLightMain else TextDark
     val secondaryTextColor = if (isDarkTheme) TextLightSec else TextGray
@@ -243,4 +244,9 @@ fun ActionSection(isDarkTheme: Boolean, subColor: Color, onStartClick: () -> Uni
     }
 }
 
-data class FeatureData(val title: String, val subtitle: String, val icon: ImageVector)
+// THIS CLASS MUST BE AT THE BOTTOM OR TOP, OUTSIDE OTHER CLASSES/FUNCTIONS
+data class FeatureData(
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector
+)

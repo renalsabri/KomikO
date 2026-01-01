@@ -1,5 +1,9 @@
 package com.example.komiko
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,22 +26,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 
 private val ColorPrimary = Color(0xFFEE9D2B)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddMangaManualScreen(
-    isDarkTheme: Boolean, // Added Parameter
+    isDarkTheme: Boolean,
     onBack: () -> Unit,
     onSave: (Manga) -> Unit
 ) {
-    // Resolve Colors
     val bgColor = if (isDarkTheme) Color(0xFF221A10) else Color(0xFFF8F7F6)
     val surfaceColor = if (isDarkTheme) Color(0xFF2C241B) else Color(0xFFFFFFFF)
     val textMain = if (isDarkTheme) Color(0xFFF4F3F0) else Color(0xFF181511)
@@ -50,6 +55,16 @@ fun AddMangaManualScreen(
     var chaptersRead by remember { mutableStateOf("0") }
     var totalChapters by remember { mutableStateOf("") }
     var rating by remember { mutableStateOf(3) }
+
+    // IMAGE PICKER STATE
+    var coverUri by remember { mutableStateOf<String?>(null) }
+
+    // Launcher for Photo Picker
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        coverUri = uri?.toString()
+    }
 
     val statusOptions = listOf("Reading", "Completed", "On Hold", "Dropped", "Plan to Read")
 
@@ -65,7 +80,8 @@ fun AddMangaManualScreen(
                 actions = {
                     TextButton(onClick = {
                         if (title.isNotEmpty()) {
-                            onSave(Manga(title, website, status, chaptersRead, totalChapters, rating))
+                            // Save with Cover URI
+                            onSave(Manga(title, website, status, chaptersRead, totalChapters, rating, coverUri))
                         }
                     }) {
                         Text("Save", style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorPrimary))
@@ -84,22 +100,37 @@ fun AddMangaManualScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Cover Image Placeholder
+            // Cover Image Upload Area
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Column(
+                Box(
                     modifier = Modifier
                         .width(160.dp)
                         .aspectRatio(3f / 4f)
                         .clip(RoundedCornerShape(8.dp))
                         .background(surfaceColor)
                         .border(2.dp, ColorPrimary.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
-                        .clickable { },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                        .clickable {
+                            // Launch Picker
+                            launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Outlined.AddAPhoto, null, tint = textSec, modifier = Modifier.size(40.dp))
-                    Spacer(Modifier.height(8.dp))
-                    Text("Tap to add cover", style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = textSec))
+                    if (coverUri != null) {
+                        // Display selected image
+                        AsyncImage(
+                            model = coverUri,
+                            contentDescription = "Cover Image",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        // Placeholder
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Outlined.AddAPhoto, null, tint = textSec, modifier = Modifier.size(40.dp))
+                            Spacer(Modifier.height(8.dp))
+                            Text("Tap to add cover", style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = textSec))
+                        }
+                    }
                 }
             }
 

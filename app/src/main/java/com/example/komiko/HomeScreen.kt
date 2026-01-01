@@ -30,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 
 private val KomikoLightOrangeBg = Color(0xFFFFF8E1)
 
@@ -308,11 +310,23 @@ fun MangaListItem(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Updated Image Box
             Box(
                 modifier = Modifier
                     .size(60.dp, 80.dp)
-                    .background(Color.LightGray.copy(alpha=0.3f), RoundedCornerShape(8.dp))
-            )
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.LightGray.copy(alpha = 0.3f))
+            ) {
+                if (manga.coverUri != null) {
+                    AsyncImage(
+                        model = manga.coverUri,
+                        contentDescription = "Cover",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(text = manga.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = mainTextColor)
@@ -327,7 +341,7 @@ fun MangaListItem(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(
-                        color = KomikoLightOrangeBg,
+                        color = KomikoLightOrange.copy(alpha=0.5f), // Using global color
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
