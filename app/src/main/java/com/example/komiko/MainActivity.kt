@@ -72,6 +72,9 @@ class MainActivity : ComponentActivity() {
                                 // Set the selected manga and navigate to details
                                 selectedManga = manga
                                 currentScreen = "details"
+                            },
+                            onSettingsClick = { // Added navigation to settings
+                                currentScreen = "settings"
                             }
                         )
                     }
@@ -102,6 +105,11 @@ class MainActivity : ComponentActivity() {
                             // Fallback if something goes wrong
                             currentScreen = "library"
                         }
+                    }
+                    "settings" -> { // Added Settings Case
+                        SettingsScreen(
+                            onBackClick = { currentScreen = "library" }
+                        )
                     }
                 }
             }

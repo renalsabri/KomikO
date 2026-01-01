@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.LibraryBooks
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,13 +29,19 @@ private val KomikoLightOrangeBg = Color(0xFFFFF8E1)
 fun LibraryScreen(
     mangaList: List<Manga>,
     onAddMangaClick: () -> Unit,
-    onMangaClick: (Manga) -> Unit // ADDED: Click handler for items
+    onMangaClick: (Manga) -> Unit,
+    onSettingsClick: () -> Unit // ADDED: Callback for settings button
 ) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Kom!kO", fontWeight = FontWeight.Bold, fontSize = 24.sp, color = KomikoOrange) },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White),
+                navigationIcon = { // ADDED: Settings Button on Left
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = TextDark)
+                    }
+                },
                 actions = {
                     if (mangaList.isNotEmpty()) {
                         IconButton(onClick = onAddMangaClick) {
@@ -93,7 +100,7 @@ fun LibraryScreen(
                 items(mangaList) { manga ->
                     MangaListItem(
                         manga = manga,
-                        onClick = { onMangaClick(manga) } // Pass the click event
+                        onClick = { onMangaClick(manga) }
                     )
                 }
             }
@@ -102,7 +109,7 @@ fun LibraryScreen(
 }
 
 @Composable
-fun MangaListItem(manga: Manga, onClick: () -> Unit) { // ADDED: onClick parameter
+fun MangaListItem(manga: Manga, onClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -110,7 +117,7 @@ fun MangaListItem(manga: Manga, onClick: () -> Unit) { // ADDED: onClick paramet
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() } // ADDED: Make Card Clickable
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier.padding(16.dp),

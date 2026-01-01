@@ -157,7 +157,6 @@ fun MangaDetailsScreen(
                 }
             }
 
-            // 4. Progress Tracking
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     text = "Progress",
@@ -170,7 +169,6 @@ fun MangaDetailsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Chapters Read Stepper
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Chapters Read",
@@ -212,7 +210,6 @@ fun MangaDetailsScreen(
                         modifier = Modifier.padding(top = 24.dp)
                     )
 
-                    // Total Chapters Input
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Total Chapters",
