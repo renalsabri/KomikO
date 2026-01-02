@@ -1,3 +1,4 @@
+// HomeScreen.kt
 package com.example.komiko
 
 import androidx.compose.foundation.BorderStroke
@@ -24,13 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
 
 private val KomikoLightOrangeBg = Color(0xFFFFF8E1)
 
@@ -48,7 +49,6 @@ fun LibraryScreen(
     var selectedFilter by remember { mutableStateOf("All") }
 
     // --- 2. Filter Logic ---
-    // This list updates automatically when mangaList, searchQuery, or selectedFilter changes
     val filteredManga = remember(mangaList, searchQuery, selectedFilter) {
         mangaList.filter { manga ->
             val matchesSearch = manga.title.contains(searchQuery, ignoreCase = true) ||
@@ -104,7 +104,7 @@ fun LibraryScreen(
                 .padding(innerPadding)
         ) {
             if (mangaList.isEmpty()) {
-                // --- Empty Library State (No Items Added Yet) ---
+                // --- Empty Library State ---
                 EmptyLibraryState(
                     onAddMangaClick = onAddMangaClick,
                     mainTextColor = mainTextColor,
@@ -138,7 +138,6 @@ fun LibraryScreen(
 
                 // 5. Filtered List
                 if (filteredManga.isEmpty()) {
-                    // Empty Search Results State
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("No manga found", color = secondaryTextColor)
                     }
@@ -164,7 +163,7 @@ fun LibraryScreen(
     }
 }
 
-// --- New Components ---
+// --- Components ---
 
 @Composable
 fun KomikoSearchBar(
@@ -265,7 +264,7 @@ fun EmptyLibraryState(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(modifier = Modifier.size(160.dp).background(KomikoLightOrangeBg, CircleShape), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.size(160.dp).background(KomikoLightOrange, CircleShape), contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.LibraryBooks, null, tint = KomikoOrange, modifier = Modifier.size(80.dp))
         }
         Spacer(modifier = Modifier.height(32.dp))
@@ -296,6 +295,11 @@ fun MangaListItem(
     secondaryTextColor: Color,
     onClick: () -> Unit
 ) {
+    // Calculate progress for the wheel
+    val read = manga.chaptersRead.toFloatOrNull() ?: 0f
+    val total = manga.totalChapters.toFloatOrNull() ?: 1f // Avoid divide by zero
+    val progress = if (total > 0f) (read / total).coerceIn(0f, 1f) else 0f
+
     Card(
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -309,12 +313,12 @@ fun MangaListItem(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Updated Image Box
+            // Cover Image
             Box(
                 modifier = Modifier
                     .size(60.dp, 80.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color.LightGray.copy(alpha = 0.3f))
+                    .background(Color.LightGray.copy(alpha=0.3f))
             ) {
                 if (manga.coverUri != null) {
                     AsyncImage(
@@ -327,7 +331,9 @@ fun MangaListItem(
             }
 
             Spacer(modifier = Modifier.width(16.dp))
-            Column {
+
+            // Info Column
+            Column(modifier = Modifier.weight(1f)) {
                 Text(text = manga.title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = mainTextColor)
                 Text(text = manga.author, fontSize = 14.sp, color = secondaryTextColor)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -340,7 +346,7 @@ fun MangaListItem(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(
-                        color = KomikoLightOrange.copy(alpha=0.5f), // Using global color
+                        color = KomikoLightOrange.copy(alpha=0.5f),
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
@@ -351,6 +357,26 @@ fun MangaListItem(
                         )
                     }
                 }
+            }
+
+            // Progress Wheel
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                CircularProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.size(44.dp),
+                    color = KomikoOrange,
+                    trackColor = borderColor,
+                    strokeWidth = 4.dp
+                )
+                Text(
+                    text = "${(progress * 100).toInt()}%",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = mainTextColor
+                )
             }
         }
     }
