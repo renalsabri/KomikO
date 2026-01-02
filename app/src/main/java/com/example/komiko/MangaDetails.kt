@@ -1,5 +1,10 @@
+// MangaDetails.kt
 package com.example.komiko
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,20 +33,13 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
 
-// Reusing global definitions where possible, or defining local specific shades
 private val DetailsColorPrimary = Color(0xFFEE9D2B)
 private val DetailsBgLight = Color(0xFFF8F7F6)
 private val DetailsBgDark = Color(0xFF221A10)
@@ -72,7 +70,6 @@ fun MangaDetailsScreen(
     var totalChapters by remember { mutableStateOf(manga.totalChapters) }
     var rating by remember { mutableIntStateOf(manga.rating) }
 
-    // Image State
     var coverUri by remember { mutableStateOf(manga.coverUri) }
 
     val launcher = rememberLauncherForActivityResult(
@@ -91,7 +88,16 @@ fun MangaDetailsScreen(
                 textColor = textColor,
                 onBackClick = onBackClick,
                 onSaveClick = {
-                    onSaveClick(Manga(title, author, selectedStatus, chaptersRead.toString(), totalChapters, rating, coverUri))
+                    onSaveClick(Manga(
+                        title = title,
+                        author = author,
+                        status = selectedStatus,
+                        chaptersRead = chaptersRead.toString(),
+                        totalChapters = totalChapters,
+                        rating = rating,
+                        coverUri = coverUri,
+                        lastUpdated = System.currentTimeMillis() // Update time
+                    ))
                 }
             )
         }
@@ -104,7 +110,7 @@ fun MangaDetailsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // 1. Cover Image (Editable)
+            // 1. Cover Image
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
@@ -138,7 +144,6 @@ fun MangaDetailsScreen(
                 MangaInputField(label = "Author / Website", value = author, onValueChange = { author = it }, placeholder = "e.g., Eiichiro Oda", backgroundColor = surfaceColor, borderColor = borderColor, textColor = textColor)
             }
 
-            // ... (Rest of the UI: Status, Progress, Rating remains identical to previous version) ...
             // 3. Status Selector
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(text = "Status", color = textColor, fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -209,8 +214,6 @@ fun MangaDetailsScreen(
         }
     }
 }
-
-// --- Components (Helper functions) ---
 
 @Composable
 fun TopBar(title: String, textColor: Color, onBackClick: () -> Unit, onSaveClick: () -> Unit) {

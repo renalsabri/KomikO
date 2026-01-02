@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.rounded.Person // ADDED
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,7 +44,8 @@ fun SettingsScreen(
     isDarkTheme: Boolean,
     onThemeChange: (Boolean) -> Unit,
     onBackClick: () -> Unit = {},
-    onBackupClick: () -> Unit = {} // Added Parameter
+    onBackupClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {} // ADDED
 ) {
     val scrollState = rememberScrollState()
     var showThemeDialog by remember { mutableStateOf(false) }
@@ -150,6 +152,25 @@ fun SettingsScreen(
             // Spacer for top padding
             Spacer(modifier = Modifier.height(16.dp))
 
+            // --- Section: Account (ADDED) ---
+            SettingsSectionHeader(title = "Account", textColor = secondaryTextColor)
+            SettingsGroup(backgroundColor = surfaceColor) {
+                SettingsTile(
+                    icon = Icons.Rounded.Person,
+                    title = "Profile & Stats",
+                    textColor = mainTextColor,
+                    iconBgColor = backgroundColor,
+                    trailingContent = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = secondaryTextColor
+                        )
+                    },
+                    onClick = { onProfileClick() }
+                )
+            }
+
             // --- Section: General ---
             SettingsSectionHeader(title = "General", textColor = secondaryTextColor)
             SettingsGroup(backgroundColor = surfaceColor) {
@@ -191,7 +212,7 @@ fun SettingsScreen(
                             tint = secondaryTextColor
                         )
                     },
-                    onClick = { onBackupClick() } // Connected Callback
+                    onClick = { onBackupClick() }
                 )
             }
 

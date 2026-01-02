@@ -1,3 +1,4 @@
+// AddManga.kt
 package com.example.komiko
 
 import android.net.Uri
@@ -56,10 +57,8 @@ fun AddMangaManualScreen(
     var totalChapters by remember { mutableStateOf("") }
     var rating by remember { mutableStateOf(3) }
 
-    // IMAGE PICKER STATE
     var coverUri by remember { mutableStateOf<String?>(null) }
 
-    // Launcher for Photo Picker
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
@@ -80,8 +79,16 @@ fun AddMangaManualScreen(
                 actions = {
                     TextButton(onClick = {
                         if (title.isNotEmpty()) {
-                            // Save with Cover URI
-                            onSave(Manga(title, website, status, chaptersRead, totalChapters, rating, coverUri))
+                            onSave(Manga(
+                                title = title,
+                                author = website,
+                                status = status,
+                                chaptersRead = chaptersRead,
+                                totalChapters = totalChapters,
+                                rating = rating,
+                                coverUri = coverUri,
+                                lastUpdated = System.currentTimeMillis() // Set timestamp
+                            ))
                         }
                     }) {
                         Text("Save", style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = ColorPrimary))
@@ -100,7 +107,7 @@ fun AddMangaManualScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Cover Image Upload Area
+            // Cover Image
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Box(
                     modifier = Modifier
@@ -110,13 +117,11 @@ fun AddMangaManualScreen(
                         .background(surfaceColor)
                         .border(2.dp, ColorPrimary.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                         .clickable {
-                            // Launch Picker
                             launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         },
                     contentAlignment = Alignment.Center
                 ) {
                     if (coverUri != null) {
-                        // Display selected image
                         AsyncImage(
                             model = coverUri,
                             contentDescription = "Cover Image",
@@ -124,7 +129,6 @@ fun AddMangaManualScreen(
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
-                        // Placeholder
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Outlined.AddAPhoto, null, tint = textSec, modifier = Modifier.size(40.dp))
                             Spacer(Modifier.height(8.dp))

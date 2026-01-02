@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.LibraryBooks
@@ -35,6 +37,12 @@ import coil.compose.AsyncImage
 
 private val KomikoLightOrangeBg = Color(0xFFFFF8E1)
 
+enum class SortOption {
+    ALPHABETICAL,
+    LAST_UPDATED,
+    RATING
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
@@ -42,20 +50,28 @@ fun LibraryScreen(
     mangaList: List<Manga>,
     onAddMangaClick: () -> Unit,
     onMangaClick: (Manga) -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onIncrementClick: (Manga) -> Unit // ADDED
 ) {
-    // --- 1. State for Search and Filtering ---
+    // --- State ---
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
+    var sortOption by remember { mutableStateOf(SortOption.LAST_UPDATED) }
+    var showSortMenu by remember { mutableStateOf(false) }
 
-    // --- 2. Filter Logic ---
-    val filteredManga = remember(mangaList, searchQuery, selectedFilter) {
-        mangaList.filter { manga ->
+    // --- Filter & Sort Logic ---
+    val filteredManga = remember(mangaList, searchQuery, selectedFilter, sortOption) {
+        val filtered = mangaList.filter { manga ->
             val matchesSearch = manga.title.contains(searchQuery, ignoreCase = true) ||
                     manga.author.contains(searchQuery, ignoreCase = true)
             val matchesStatus = if (selectedFilter == "All") true else manga.status.equals(selectedFilter, ignoreCase = true)
-
             matchesSearch && matchesStatus
+        }
+
+        when (sortOption) {
+            SortOption.ALPHABETICAL -> filtered.sortedBy { it.title }
+            SortOption.LAST_UPDATED -> filtered.sortedByDescending { it.lastUpdated }
+            SortOption.RATING -> filtered.sortedByDescending { it.rating }
         }
     }
 
@@ -77,6 +93,30 @@ fun LibraryScreen(
                     }
                 },
                 actions = {
+                    // Sort Button
+                    Box {
+                        IconButton(onClick = { showSortMenu = true }) {
+                            Icon(Icons.Default.Sort, contentDescription = "Sort", tint = mainTextColor)
+                        }
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false },
+                            containerColor = surfaceColor
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Last Updated", color = mainTextColor) },
+                                onClick = { sortOption = SortOption.LAST_UPDATED; showSortMenu = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Alphabetical (A-Z)", color = mainTextColor) },
+                                onClick = { sortOption = SortOption.ALPHABETICAL; showSortMenu = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Rating (High-Low)", color = mainTextColor) },
+                                onClick = { sortOption = SortOption.RATING; showSortMenu = false }
+                            )
+                        }
+                    }
                     if (mangaList.isNotEmpty()) {
                         IconButton(onClick = onAddMangaClick) {
                             Icon(Icons.Rounded.Add, contentDescription = "Add", tint = KomikoOrange)
@@ -104,16 +144,8 @@ fun LibraryScreen(
                 .padding(innerPadding)
         ) {
             if (mangaList.isEmpty()) {
-                // --- Empty Library State ---
-                EmptyLibraryState(
-                    onAddMangaClick = onAddMangaClick,
-                    mainTextColor = mainTextColor,
-                    secondaryTextColor = secondaryTextColor
-                )
+                EmptyLibraryState(onAddMangaClick, mainTextColor, secondaryTextColor)
             } else {
-                // --- Functional Library Content ---
-
-                // 3. Search Bar
                 KomikoSearchBar(
                     query = searchQuery,
                     onQueryChange = { searchQuery = it },
@@ -124,7 +156,6 @@ fun LibraryScreen(
                     borderColor = borderColor
                 )
 
-                // 4. Status Filter Chips
                 StatusFilterRow(
                     selectedFilter = selectedFilter,
                     onFilterSelected = { selectedFilter = it },
@@ -136,7 +167,6 @@ fun LibraryScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 5. Filtered List
                 if (filteredManga.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("No manga found", color = secondaryTextColor)
@@ -153,7 +183,8 @@ fun LibraryScreen(
                                 borderColor = borderColor,
                                 mainTextColor = mainTextColor,
                                 secondaryTextColor = secondaryTextColor,
-                                onClick = { onMangaClick(manga) }
+                                onClick = { onMangaClick(manga) },
+                                onIncrementClick = { onIncrementClick(manga) }
                             )
                         }
                     }
@@ -163,7 +194,7 @@ fun LibraryScreen(
     }
 }
 
-// --- Components ---
+// ... Components ...
 
 @Composable
 fun KomikoSearchBar(
@@ -293,11 +324,11 @@ fun MangaListItem(
     borderColor: Color,
     mainTextColor: Color,
     secondaryTextColor: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onIncrementClick: () -> Unit // ADDED
 ) {
-    // Calculate progress for the wheel
     val read = manga.chaptersRead.toFloatOrNull() ?: 0f
-    val total = manga.totalChapters.toFloatOrNull() ?: 1f // Avoid divide by zero
+    val total = manga.totalChapters.toFloatOrNull() ?: 1f
     val progress = if (total > 0f) (read / total).coerceIn(0f, 1f) else 0f
 
     Card(
@@ -313,7 +344,6 @@ fun MangaListItem(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Cover Image
             Box(
                 modifier = Modifier
                     .size(60.dp, 80.dp)
@@ -359,24 +389,39 @@ fun MangaListItem(
                 }
             }
 
-            // Progress Wheel
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.padding(start = 8.dp)
-            ) {
-                CircularProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.size(44.dp),
-                    color = KomikoOrange,
-                    trackColor = borderColor,
-                    strokeWidth = 4.dp
-                )
-                Text(
-                    text = "${(progress * 100).toInt()}%",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = mainTextColor
-                )
+            // Right Side: Progress + Quick Increment
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    CircularProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxSize(),
+                        color = KomikoOrange,
+                        trackColor = borderColor,
+                        strokeWidth = 4.dp
+                    )
+                    Text(
+                        text = "${(progress * 100).toInt()}%",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = mainTextColor
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                // Quick Increment Button
+                IconButton(
+                    onClick = onIncrementClick,
+                    modifier = Modifier.size(32.dp).background(KomikoOrange.copy(alpha = 0.1f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Increment",
+                        tint = KomikoOrange,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }

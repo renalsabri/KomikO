@@ -28,7 +28,6 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 
-// Define colors locally if needed, or reuse globals if available
 private val BackResBgDark = Color(0xFF221A10)
 private val BackResBgLight = Color(0xFFF8F7F6)
 private val BackResTextDark = Color(0xFFF4F3F0)
@@ -47,7 +46,6 @@ fun BackupRestoreScreen(
     val bgColor = if (isDarkTheme) BackResBgDark else BackResBgLight
     val textColor = if (isDarkTheme) BackResTextDark else BackResTextLight
 
-    // --- Export Launcher ---
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv")
     ) { uri ->
@@ -56,7 +54,6 @@ fun BackupRestoreScreen(
         }
     }
 
-    // --- Import Launcher ---
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -94,23 +91,10 @@ fun BackupRestoreScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = Icons.Rounded.CloudUpload,
-                contentDescription = null,
-                modifier = Modifier.size(100.dp),
-                tint = KomikoOrange
-            )
+            Icon(Icons.Rounded.CloudUpload, null, modifier = Modifier.size(100.dp), tint = KomikoOrange)
             Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                "Export your library to a CSV file to save it safely or move it to another device.",
-                color = textColor,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-
+            Text("Export your library to a CSV file to save it safely or move it to another device.", color = textColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             Spacer(modifier = Modifier.height(24.dp))
-
-            // EXPORT BUTTON
             Button(
                 onClick = { exportLauncher.launch("komiko_backup_${System.currentTimeMillis()}.csv") },
                 colors = ButtonDefaults.buttonColors(containerColor = KomikoOrange),
@@ -124,23 +108,10 @@ fun BackupRestoreScreen(
             Divider(color = textColor.copy(alpha = 0.1f))
             Spacer(modifier = Modifier.height(48.dp))
 
-            Icon(
-                imageVector = Icons.Rounded.CloudDownload,
-                contentDescription = null,
-                modifier = Modifier.size(100.dp),
-                tint = KomikoOrange.copy(alpha = 0.7f)
-            )
+            Icon(Icons.Rounded.CloudDownload, null, modifier = Modifier.size(100.dp), tint = KomikoOrange.copy(alpha = 0.7f))
             Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                "Import a previously exported CSV file to restore your library.",
-                color = textColor,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-            )
-
+            Text("Import a previously exported CSV file to restore your library.", color = textColor, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             Spacer(modifier = Modifier.height(24.dp))
-
-            // IMPORT BUTTON
             OutlinedButton(
                 onClick = { importLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "application/csv")) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -159,9 +130,8 @@ private fun saveCsvToUri(context: Context, uri: Uri, list: List<Manga>) {
     try {
         context.contentResolver.openOutputStream(uri)?.use { outputStream ->
             val writer = OutputStreamWriter(outputStream)
-            // Header
-            writer.write("Title,Author,Status,ChaptersRead,TotalChapters,Rating,CoverUri\n")
-            // Rows
+            // Updated Header with LastUpdated
+            writer.write("Title,Author,Status,ChaptersRead,TotalChapters,Rating,CoverUri,LastUpdated\n")
             list.forEach { manga ->
                 val line = buildString {
                     append(escapeCsv(manga.title)).append(",")
@@ -169,8 +139,9 @@ private fun saveCsvToUri(context: Context, uri: Uri, list: List<Manga>) {
                     append(escapeCsv(manga.status)).append(",")
                     append(escapeCsv(manga.chaptersRead)).append(",")
                     append(escapeCsv(manga.totalChapters)).append(",")
-                    append(manga.rating).append(",") // Int doesn't need escape
-                    append(escapeCsv(manga.coverUri ?: ""))
+                    append(manga.rating).append(",")
+                    append(escapeCsv(manga.coverUri ?: "")).append(",")
+                    append(manga.lastUpdated) // Append Long directly
                     append("\n")
                 }
                 writer.write(line)
@@ -193,7 +164,7 @@ private fun loadCsvFromUri(context: Context, uri: Uri): List<Manga> {
 
             while (reader.readLine().also { line = it } != null) {
                 val tokens = parseCsvLine(line!!)
-                if (tokens.size >= 6) {
+                if (tokens.size >= 7) { // Check for minimum required fields
                     val m = Manga(
                         title = tokens.getOrElse(0) { "" },
                         author = tokens.getOrElse(1) { "" },
@@ -201,7 +172,8 @@ private fun loadCsvFromUri(context: Context, uri: Uri): List<Manga> {
                         chaptersRead = tokens.getOrElse(3) { "0" },
                         totalChapters = tokens.getOrElse(4) { "" },
                         rating = tokens.getOrElse(5) { "0" }.toIntOrNull() ?: 0,
-                        coverUri = tokens.getOrElse(6) { "" }.takeIf { it.isNotEmpty() }
+                        coverUri = tokens.getOrElse(6) { "" }.takeIf { it.isNotEmpty() },
+                        lastUpdated = tokens.getOrElse(7) { "" }.toLongOrNull() ?: System.currentTimeMillis()
                     )
                     restoredList.add(m)
                 }
@@ -214,16 +186,14 @@ private fun loadCsvFromUri(context: Context, uri: Uri): List<Manga> {
     return restoredList
 }
 
-// Simple Helper to handle quotes and commas in CSV
 private fun escapeCsv(value: String): String {
-    var text = value.replace("\"", "\"\"") // Escape double quotes
+    var text = value.replace("\"", "\"\"")
     if (text.contains(",") || text.contains("\n") || text.contains("\"")) {
         text = "\"$text\""
     }
     return text
 }
 
-// Simple CSV Line Parser
 private fun parseCsvLine(line: String): List<String> {
     val tokens = mutableListOf<String>()
     var inQuotes = false
@@ -239,9 +209,8 @@ private fun parseCsvLine(line: String): List<String> {
             sb.append(char)
         }
     }
-    tokens.add(sb.toString()) // Last token
+    tokens.add(sb.toString())
 
-    // Remove wrapping quotes and unescape double quotes
     return tokens.map { token ->
         var t = token
         if (t.startsWith("\"") && t.endsWith("\"")) {
